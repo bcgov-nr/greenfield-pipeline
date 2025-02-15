@@ -59,7 +59,7 @@ services:
       <<: *postgres-vars
       NODE_ENV: development
     image: node:22
-    ports: ["3001:3000"]
+    ports: ["3000:3000"]
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:3000/api"]
     working_dir: "/app"
@@ -73,7 +73,7 @@ services:
       PORT: 3000
       NODE_ENV: development
     image: node:22
-    ports: ["3000:3000"]
+    ports: ["3001:3001"]
     volumes: ["./frontend:/app", "/app/node_modules"]
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:3000"]
@@ -91,7 +91,7 @@ services:
       PORT: 3000
       BACKEND_URL: http://backend:3000
       LOG_LEVEL: info
-    ports: ["3005:3000"]
+    ports: ["3002:3000"]
     volumes: ["./frontend/Caddyfile:/etc/caddy/Caddyfile"]
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:3000"]
