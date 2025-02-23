@@ -1,0 +1,195 @@
+apiVersion: template.openshift.io/v1
+kind: Template
+metadata:
+  annotations:
+    openshift.io/display-name: "Postgres Crunchy"
+    description: "Template for deploying the Crunchy operator."
+    tags: "crunchy,postgres,quickstart"
+    iconClass: "icon-nodejs"
+    openshift.io/documentation-url: "https://github.com/bcgov/quickstart-openshift"
+    openshift.io/provider-display-name: "BC Government"
+parameters:
+  - name: COMPONENT
+    description: "Component identifier supporting the application"
+    value: postgres-crunchy
+  - name: NAMESPACE
+    description: "Deployment namespace"
+    required: true
+  - name: POSTGRES_VERSION
+    description: "Postgres version"
+    value: 16
+  - name: POSTGIS_VERSION
+    description: "PostGIS version"
+    value: 3.4
+  - name: PORT
+    description: "Port for the database"
+    value: 5432
+  - name: PVC_STORAGE_CLASS
+    description: "Storage class for the PVC"
+    value: netapp-block-standard
+  - name: PVC_STORAGE_SIZE
+    description: "Storage size for the PVC"
+    value: 200Mi
+  - name: PVC_WAL_STORAGE_SIZE
+    description: "WAL storage size for the PVC"
+    value: 255Mi
+  - name: REQUEST_CPU
+    description: "CPU request"
+    value: 50m
+  - name: REQUEST_MEMORY
+    description: "Memory request"
+    value: 128Mi
+  - name: REPLICAS
+    description: "Number of replicas"
+    value: 2
+objects:
+  - kind: PostgresCluster
+    apiVersion: postgres-operator.crunchydata.com/v1beta1
+    metadata:
+      finalizers:
+      - postgres-operator.crunchydata.com/finalizer
+      labels:
+        app.kubernetes.io/instance: postgres
+        app.kubernetes.io/name: crunchy
+        app.kubernetes.io/version: 5.5.1
+      name: ${COMPONENT}
+      namespace: ${NAMESPACE}
+    spec:
+      backups:
+        pgbackrest:
+          global:
+            repo1-retention-full: "1"
+            repo1-retention-full-type: count
+          jobs:
+            resources:
+              requests:
+                cpu: 20m
+                memory: 128Mi
+          repoHost:
+            resources:
+              requests:
+                cpu: 20m
+                memory: 128Mi
+          repos:
+          - name: repo1
+            schedules:
+              full: 0 8 * * *
+              incremental: 0 0,12 * * *
+            volume:
+              volumeClaimSpec:
+                accessModes:
+                - ReadWriteOnce
+                resources:
+                  requests:
+                    storage: 100Mi
+                storageClassName: netapp-file-backup
+          sidecars:
+            pgbackrest:
+              resources:
+                requests:
+                  cpu: 5m
+                  memory: 16Mi
+            pgbackrestConfig:
+              resources:
+                requests:
+                  cpu: 5m
+                  memory: 16Mi
+      imagePullPolicy: IfNotPresent
+      instances:
+      - affinity:
+          podAntiAffinity:
+            preferredDuringSchedulingIgnoredDuringExecution:
+            - podAffinityTerm:
+                labelSelector:
+                  matchLabels:
+                    postgres-operator.crunchydata.com/cluster: ${COMPONENT}
+                    postgres-operator.crunchydata.com/instance-set: db
+                topologyKey: kubernetes.io/hostname
+              weight: 1
+        dataVolumeClaimSpec:
+          accessModes:
+          - ReadWriteOnce
+          resources:
+            requests:
+              storage: ${PVC_STORAGE_SIZE}
+          storageClassName: ${PVC_STORAGE_CLASS}
+        metadata:
+          annotations:
+            prometheus.io/port: "9187"
+            prometheus.io/scrape: "true"
+        name: db
+        replicas: ${REPLICAS}
+        resources:
+          requests:
+            cpu: ${REQUEST_CPU}
+            memory: ${REQUEST_MEMORY}
+        sidecars:
+          replicaCertCopy:
+            resources:
+              requests:
+                cpu: 1m
+                memory: 32Mi
+        walVolumeClaimSpec:
+          accessModes:
+          - ReadWriteOnce
+          resources:
+            requests:
+              storage: ${PVC_WAL_STORAGE_SIZE}
+          storageClassName: ${PVC_STORAGE_CLASS}
+      metadata:
+        labels:
+          app.kubernetes.io/instance: postgres
+          app.kubernetes.io/name: crunchy
+          app.kubernetes.io/version: 5.5.1
+      patroni:
+        dynamicConfiguration:
+          postgresql:
+            parameters:
+              effective_io_concurrency: 20
+              log_min_duration_statement: 1000ms
+              max_slot_wal_keep_size: 128MB
+              max_wal_size: 64MB
+              min_wal_size: 32MB
+              shared_buffers: 16MB
+              wal_buffers: 64kB
+              work_mem: 2MB
+            pg_hba:
+            - host all all 0.0.0.0/0 md5
+            - host all all ::1/128 md5
+        leaderLeaseDurationSeconds: 30
+        port: 8008
+        syncPeriodSeconds: 10
+      port: ${PORT}
+      postGISVersion: ${POSTGIS_VERSION}
+      postgresVersion: ${POSTGRES_VERSION}
+      proxy:
+        pgBouncer:
+          affinity:
+            podAntiAffinity:
+              preferredDuringSchedulingIgnoredDuringExecution:
+              - podAffinityTerm:
+                  labelSelector:
+                    matchLabels:
+                      postgres-operator.crunchydata.com/cluster: ${COMPONENT}
+                      postgres-operator.crunchydata.com/role: pgbouncer
+                  topologyKey: kubernetes.io/hostname
+                weight: 1
+          config:
+            global:
+              client_tls_sslmode: disable
+              max_db_connections: "10"
+              pool_mode: session
+          port: ${PORT}
+          replicas: 1
+          resources:
+            requests:
+              cpu: 5m
+              memory: 32Mi
+      users:
+      - name: app
+        databases: [app]
+        options: SUPERUSER CREATEDB CREATEROLE
+      - name: postgres
+        databases: [app, postgres]
+      - name: appproxy
+        databases: [app, postgres]
