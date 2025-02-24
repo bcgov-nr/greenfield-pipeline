@@ -160,7 +160,7 @@ objects:
         port: 8008
         syncPeriodSeconds: 10
       port: ${{PORT}}
-      postGISVersion: "${{POSTGIS_VERSION}}"
+      postGISVersion: "${POSTGIS_VERSION}"
       postgresVersion: "${{POSTGRES_VERSION}}"
       proxy:
         pgBouncer:
