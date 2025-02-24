@@ -118,7 +118,7 @@ objects:
             prometheus.io/port: "9187"
             prometheus.io/scrape: "true"
         name: db
-        replicas: ${REPLICAS}
+        replicas: ${{REPLICAS}}
         resources:
           requests:
             cpu: ${REQUEST_CPU}
@@ -159,9 +159,9 @@ objects:
         leaderLeaseDurationSeconds: 30
         port: 8008
         syncPeriodSeconds: 10
-      port: ${PORT}
-      postGISVersion: ${POSTGIS_VERSION}
-      postgresVersion: ${POSTGRES_VERSION}
+      port: ${{PORT}}
+      postGISVersion: "${{POSTGIS_VERSION}}"
+      postgresVersion: "${{POSTGRES_VERSION}}"
       proxy:
         pgBouncer:
           affinity:
@@ -179,7 +179,7 @@ objects:
               client_tls_sslmode: disable
               max_db_connections: "10"
               pool_mode: session
-          port: ${PORT}
+          port: ${{PORT}}
           replicas: 1
           resources:
             requests:
