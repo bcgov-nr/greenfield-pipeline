@@ -120,7 +120,7 @@ jobs:
       - uses: bcgov/action-deployer-openshift@541a7b1ed72cdd919a56262665d98410e6d97cb6 # v3.1.0
         id: deploys
         with:
-          file: common/openshift.init.yml
+          file: common/openshift.crunchy.yml
           oc_namespace: ${{ secrets.oc_namespace }}
           oc_server: ${{ vars.oc_server }}
           oc_token: ${{ secrets.oc_token }}
