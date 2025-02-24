@@ -17,13 +17,13 @@ parameters:
     required: true
   - name: POSTGRES_VERSION
     description: "Postgres version"
-    value: 16
+    value: "16"
   - name: POSTGIS_VERSION
     description: "PostGIS version"
-    value: 3.4
+    value: "3.4"
   - name: PORT
     description: "Port for the database"
-    value: 5432
+    value: "5432"
   - name: PVC_STORAGE_CLASS
     description: "Storage class for the PVC"
     value: netapp-block-standard
@@ -41,7 +41,7 @@ parameters:
     value: 128Mi
   - name: REPLICAS
     description: "Number of replicas"
-    value: 2
+    value: "2"
 objects:
   - kind: PostgresCluster
     apiVersion: postgres-operator.crunchydata.com/v1beta1

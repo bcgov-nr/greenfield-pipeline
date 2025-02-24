@@ -126,13 +126,7 @@ jobs:
           oc_token: ${{ secrets.oc_token }}
           overwrite: false
           parameters:
-            -p NAME=${{ github.event.repository.name }}
             -p NAMESPACE=${{ secrets.oc_namespace }}
-            -p POSTGRES_DATABASE=app-${{ github.event.number }}
-            -p POSTGRES_HOST=postgres-crunchy-primary.${{ secrets.oc_namespace }}.svc
-            -p POSTGRES_PASSWORD=${{ secrets.postgres_password }}
-            -p POSTGRES_USER=app-${{ github.event.number }}
-            -p ZONE=${{ inputs.tag }}
 
   deploy-matrix:
     name: Deploy
